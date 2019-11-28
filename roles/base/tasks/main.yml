@@ -1,0 +1,117 @@
+---
+- name: ensure epel yum repo is installed
+  yum: name=epel-release state=present
+  tags: base
+- name: install the 'Development tools' package group
+  yum:
+    name: "@Development tools"
+    state: present
+  tags: base
+- name: install cPan wget etc..
+  yum:
+    name:
+    - wget
+    - perl-CPAN
+    - gettext-devel
+    - perl-devel
+    - openssl-devel
+    - zlib-devel
+    - unzip
+    - curl
+    - htop
+    - vim
+    - mtr
+    - sysstat
+    - ntp
+    - postfix
+    - cyrus-sasl-plain
+    - logwatch
+    - file-devel
+    - python-setuptools
+    - yum-cron
+    - clamav
+    - python-devel
+    - python-pip
+    - libcurl-devel
+    - expat-devel
+    state: present
+  tags: base
+- name: removing existing git package
+  yum: name=git state=absent
+  tags: base
+- name: Downloading git tar file
+  unarchive:
+    dest: /opt/
+    src: "{{ git_tarball_url }}"
+    remote_src: yes
+  register: git_source_unpack
+  tags: base
+- name: configuring git from source
+  command: make install
+  args:
+    chdir: "{{ git_install_dir }}"
+  when: git_source_unpack|changed
+  register: git_configure
+  tags: base
+- name: installing awscli package
+  command: pip install --upgrade awscli
+  tags: base
+- name: update fs.filemax in sysctl.conf
+  sysctl: name=fs.file-max value=299999 state=present
+  tags: base
+- name: update net.ipv4.tcp_timestamps in sysctl.conf
+  sysctl: name=net.ipv4.tcp_timestamps value=0 state=present
+  notify:
+  - reload sysctl
+  tags: base
+- name: enable service states and start
+  service:
+    name: ntpd
+    state: started
+    enabled: yes
+  tags: base
+- name: setup ssh, limts, yum, ntp, and login message
+  copy: src={{ item.src }} dest={{ item.dest }} mode=0644 owner=root group=root backup=yes
+  with_items:
+    - { src: 'motd', dest: '/etc/motd'}
+    - { src: 'sshd_config', dest: '/etc/ssh/sshd_config' }
+    - { src: 'limits.conf', dest: '/etc/security/limits.conf' }
+    - { src: '20-nproc.conf', dest: '/etc/security/limits.d/20-nproc.conf' }
+    - { src: 'yum-cron.conf', dest: '/etc/yum/yum-cron.conf' }
+    - { src: 'ntp.conf', dest: '/etc/ntp.conf' }
+    - { src: '/usr/share/zoneinfo/America/Chicago', dest: '/etc/localtime'}
+  notify:
+  - reload sysctl
+  tags: base
+- name: setup clamav
+  copy: src={{ item.src }} dest={{ item.dest }} mode=0755 owner=root group=root
+  with_items:
+    - { src: 'clamscan', dest: '/etc/cron.daily/007_clamscan' }
+  tags: base
+
+- name: setup postfix and logwatch for production environments
+  copy: src={{ item.src }} dest={{ item.dest }} mode=0644 owner=root group=root
+  with_items:
+    - { src: 'sendgrid_main-prod.cf', dest: '/etc/postfix/main.cf' }
+    - { src: 'logwatch-prod.conf', dest: '/usr/share/logwatch/default.conf/logwatch.conf' }
+  when: deployment_env == "production"
+  notify:
+  - reload postfix
+  tags: base
+- name: setup postfix and logwatch for Non-production environments
+  copy: src={{ item.src }} dest={{ item.dest }} mode=0644 owner=root group=root
+  with_items:
+    - { src: 'sendgrid_main-prod.cf', dest: '/etc/postfix/main.cf' }
+    - { src: 'logwatch-nonprod.conf', dest: '/usr/share/logwatch/default.conf/logwatch.conf' }
+  when: deployment_env != "production"
+  notify:
+  - reload postfix
+  tags: base
+- name: setup sudoers rule for wheel
+  copy: src={{ item.src }} dest={{ item.dest }} mode=0644 owner=root group=root validate='visudo -cf %s'
+  with_items:
+    - { src: 'wheel_sudoers', dest: '/etc/sudoers.d/080_wheel' }
+  tags: base
+- name: Updating tmpfs size for Lb's
+  template: src=logind_conf.j2 dest=/etc/systemd/logind.conf mode=0644 owner=root group=root backup=yes
+  tags: base

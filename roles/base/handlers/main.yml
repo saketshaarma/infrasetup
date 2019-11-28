@@ -1,0 +1,11 @@
+---
+# handlers file for base
+- name: reload sshd
+  service: name=sshd state=reloaded
+
+- name: reload postfix
+  service: name=postfix state=reloaded
+
+- name: reload sysctl
+  command: /sbin/sysctl -p
+  ignore_errors: yes

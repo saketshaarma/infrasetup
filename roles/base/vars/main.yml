@@ -1,0 +1,5 @@
+---
+# vars file for base
+git_version: "git-2.9.5"
+git_tarball_url: "https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.9.5.tar.gz"
+git_install_dir: "/opt/{{ git_version }}"
