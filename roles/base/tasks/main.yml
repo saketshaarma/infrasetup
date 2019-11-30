@@ -39,11 +39,15 @@
 - name: removing existing git package
   yum: name=git state=absent
   tags: base
+- name: check if file available on server
+  stat: path=/opt/{{ git_version }}
+  register: git_file
 - name: Downloading git tar file
   unarchive:
     dest: /opt/
     src: "{{ git_tarball_url }}"
     remote_src: yes
+  when: git_file.stat.exists==false
   register: git_source_unpack
   tags: base
 - name: configuring git from source
