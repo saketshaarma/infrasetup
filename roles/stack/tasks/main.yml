@@ -1,5 +1,4 @@
 ---
-<<<<<<< HEAD
 - name: setup wkhtmltopdf and dependencies
   yum: name={{ item }} state=present
   with_items:
@@ -87,6 +86,3 @@
   - { user: 'topuser', home: '/home/topuser' }
   - { user: 'minions', home: '/home/minions' }
   tags: stack
-=======
-# tasks file for stack
->>>>>>> f6f106855d89e68ca9d66aaa354d7b35ee89d141
