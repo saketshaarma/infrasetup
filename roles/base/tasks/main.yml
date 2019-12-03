@@ -7,10 +7,31 @@
     name: "@Development tools"
     state: present
   tags: base
-- name: install cPan wget etc..
+- name: install cPan wget and build essential packages etc..
   yum:
     name:
     - wget
+    - gcc-c++
+    - patch
+    - make
+    - bzip2
+    - autoconf
+    - libtool
+    - freetds
+    - bison
+    - readline
+    - readline-devel
+    - zlib
+    - zlib-devel
+    - libyaml-devel
+    - libffi-devel
+    - openssl-devel
+    - libcurl-devel
+    - libxslt
+    - libxslt-devel
+    - pcre
+    - pcre-devel
+    - automake
     - perl-CPAN
     - gettext-devel
     - perl-devel
