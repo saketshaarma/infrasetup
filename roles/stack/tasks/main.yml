@@ -1,0 +1,88 @@
+---
+- name: setup wkhtmltopdf and dependencies
+  yum: name={{ item }} state=present
+  with_items:
+   - xorg-x11-fonts-75dpi
+   - xorg-x11-fonts-100dpi
+   - xorg-x11-fonts-Type1
+   - xorg-x11-fonts-misc
+   - https://s3.us-east-2.amazonaws.com/jn-infra-assets-public/wkhtmltox-0.12.2.1_linux-centos7-amd64.rpm
+  tags: stack
+
+- name: setup symlink for wkhtmltopdf
+  file: src={{ item.src }} dest={{ item.dest }} state=link owner=root group=root force=yes
+  with_items:
+   - { src: '/usr/local/bin/wkhtmltopdf', dest: '/bin/wkhtmltopdf'}
+  tags: stack
+- name: ensure rvm gpg keys are imported
+  shell: curl -sSL https://rvm.io/mpapis.asc | sudo gpg --import -
+  args:
+    warn: no
+  tags: stack
+- name: install rvm from rvm.io
+  shell: curl -L https://get.rvm.io | bash -s -- --version 1.29.3
+  tags: stack
+  args:
+    warn: no
+
+- name: install rvm requirements
+  shell: /usr/local/rvm/bin/rvm requirements
+  tags: stack
+
+- name: install rvm rubies
+  shell: /usr/local/rvm/bin/rvm install {{ item.ruby }} creates=/usr/local/rvm/rubies/{{ item.ruby }}/bin/ruby
+  with_items: "{{rvm_rubies}}"
+  tags: stack
+- name: setup default ruby template
+  template: src=roles/stack/templates/rvm-init.sh.j2 dest=/tmp/rvm-init.sh mode=0777
+  tags: stack
+
+- name: set default ruby
+  command: /bin/bash --login /tmp/rvm-init.sh
+  tags: stack
+
+- name: ensure rake gem is installed for all rvm rubies
+  shell: /usr/local/rvm/wrappers/{{ item.ruby }}/gem install rake -v {{ item.rake_version }} creates=/usr/local/rvm/wrappers/{{ item.ruby }}/rake
+  with_items: "{{ rake_installation }}"
+  tags: stack
+
+- name: ensure bundler gem is installed for all rvm rubies
+  shell: /usr/local/rvm/wrappers/{{ item.ruby }}/gem install bundler -v {{ item.bundler_version }} creates=/usr/local/rvm/wrappers/{{ item.ruby }}/bundle
+  with_items: "{{ bundler_installation}}"
+  tags: stack
+
+- name: ensure rack gem is installed for all rvm rubies
+  shell: /usr/local/rvm/wrappers/{{ item.ruby }}/gem install rack -v {{ item.rack_version }} creates=/usr/local/rvm/wrappers/{{ item.ruby }}/rackup
+  with_items: "{{ rack_installation }}"
+  tags: stack
+
+- name: setup topuser account
+  user: name=popuser password={{ topuser_password }} comment="Jifflenow Application TopUser"
+  tags: stack
+
+- name: add users to specific groups
+  user: name={{ item.user }} groups={{ item.groups }}
+  with_items:
+  - { user: 'minions', groups: 'rvm,wheel' }
+  - { user: 'topuser', groups: 'rvm' }
+  tags: stack
+
+# - name: setup ssh keys for minions
+#   include: ../../ssh_keys/tasks/main.yml local_user=minions
+#   tags: stack
+#
+# - name: setup ssh keys for topuser
+#   include: ../../ssh_keys/tasks/main.yml local_user=topuser
+#   tags: stack
+#
+# - name: symlink github key as id_rsa for topuser
+#   file: src=/home/topuser/.ssh/github dest=/home/topuser/.ssh/id_rsa mode=0600 owner=topuser group=topuser state=link
+#   tags: stack
+#
+- name: copy .gemrc to root topuser and minions
+  copy: src=dot-gemrc dest={{ item.home }}/.gemrc mode=0644 owner={{ item.user }} group={{ item.user }} backup=yes
+  with_items:
+  - { user: 'root', home: '/root' }
+  - { user: 'topuser', home: '/home/topuser' }
+  - { user: 'minions', home: '/home/minions' }
+  tags: stack

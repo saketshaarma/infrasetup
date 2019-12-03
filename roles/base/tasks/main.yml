@@ -42,6 +42,7 @@
 - name: check if file available on server
   stat: path=/opt/{{ git_version }}
   register: git_file
+  tags: base
 - name: Downloading git tar file
   unarchive:
     dest: /opt/

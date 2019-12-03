@@ -1,0 +1,24 @@
+---
+topuser_password: "$6$mysecretsalt$qJbapG68nyRab3gxvKWPUcs2g3t0oMHSHMnSKecYNpSi3CuZm.GbBqXO8BE6EI6P1JUefhA0qvD7b5LSh./PU1"
+rvm_default_ruby: "{{default_ruby}}"
+
+rvm_rubies:
+  - { ruby: "ruby-2.0.0-p353" }
+  - { ruby: "ruby-2.2.0" }
+  - { ruby: "ruby-2.2.5" }
+  - { ruby: "ruby-2.3.5" }
+  - { ruby: "ruby-2.5.1" }
+
+rake_installation:
+  - { ruby: "ruby-2.0.0-p353", rake_version: "0.9.6" }
+
+bundler_installation:
+  - { ruby: "ruby-2.0.0-p353", bundler_version: "1.3.5" }
+  - { ruby: "ruby-2.2.0", bundler_version: "1.8.4"}
+  - { ruby: "ruby-2.2.5", bundler_version: "1.13.1" }
+  - { ruby: "ruby-2.3.5", bundler_version: "1.15.4"}
+  - { ruby: "ruby-2.5.1", bundler_version: "1.16.3"}
+
+rack_installation:
+  - { ruby: "ruby-2.0.0-p353", rack_version: "1.6.4" }
+  - { ruby: "ruby-2.2.0", rack_version: "1.6.4" }

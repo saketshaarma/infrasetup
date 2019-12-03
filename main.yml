@@ -5,4 +5,5 @@
 - name: configure and deploy the appserver
   hosts: all
   roles:
-    - base
+          #- base
+    - stack
